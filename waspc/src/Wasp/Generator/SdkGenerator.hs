@@ -119,21 +119,6 @@ genSdkReal spec =
   where
     genFileCopy = return . C.mkTmplFd
 
--- genSdkHardcoded :: Generator [FileDraft]
--- genSdkHardcoded =
---   return []
---   where
---     copyFile = C.mkTmplFd
---     copyFolder :: Path' (Rel SdkTemplatesDir) (Dir d) -> FileDraft
---     copyFolder modul =
---       createCopyDirFileDraft
---         RemoveExistingDstDir
---         (dstFolder </> castRel modul)
---         (srcFolder </> modul)
---     dstFolder = C.sdkRootDirInProjectRootDir
---     srcFolder = absSdkTemplatesDir
---     absSdkTemplatesDir = unsafePerformIO getTemplatesDirAbsPath </> C.sdkTemplatesDirInTemplatesDir
-
 genEntitiesAndServerTypesDirs :: AppSpec -> Generator [FileDraft]
 genEntitiesAndServerTypesDirs spec =
   return
@@ -171,11 +156,7 @@ genEntitiesAndServerTypesDirs spec =
             object
               [ "entities" .= allEntities,
                 "isAuthEnabled" .= isJust maybeUserEntityName,
-                "userEntityName" .= userEntityName,
-                "authEntityName" .= DbAuth.authEntityName,
-                "authFieldOnUserEntityName" .= DbAuth.authFieldOnUserEntityName,
                 "authIdentityEntityName" .= DbAuth.authIdentityEntityName,
-                "identitiesFieldOnAuthEntityName" .= DbAuth.identitiesFieldOnAuthEntityName,
                 "userFieldName" .= toLowerFirst userEntityName
               ]
         )
@@ -287,6 +268,8 @@ genTsConfigJson = do
 
 depsRequiredForAuth :: AppSpec -> [AS.Dependency.Dependency]
 depsRequiredForAuth spec =
+  -- NOTE: If Stitches start being used outside of auth,
+  -- we should include this dependency in the SDK deps.
   [AS.Dependency.make ("@stitches/react", show versionRange) | isAuthEnabled spec]
   where
     versionRange = SV.Range [SV.backwardsCompatibleWith (SV.Version 1 2 8)]
